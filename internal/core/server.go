@@ -12,6 +12,6 @@ type Backend struct{
 	ActiveConns int64
 	Latency time.Duration
 	ErrorCount int64
+	RelativeWeight float64
 	Mutex sync.Mutex
-
 }
