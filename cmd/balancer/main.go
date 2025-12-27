@@ -16,14 +16,17 @@ import (
 	"github.com/lugnitdgp/TDOC_Routrix/internal/routing"
 )
 
-func startDummyBackend(port string) {
+func startDummyBackend(port string, delay time.Duration) {
 	go func() {
 		mux := http.NewServeMux()
 		mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, "Hello from backend %s", port)
+			if delay > 0 {
+				time.Sleep(delay)
+			}
+			fmt.Fprintf(w, "Hello from backend %s (Delay: %v)", port, delay)
 		})
 
-		log.Printf("[DUMMY] starting backend on :%s\n", port)
+		log.Printf("[DUMMY] starting backend on :%s with %v delay\n", port, delay)
 		if err := http.ListenAndServe(":"+port, mux); err != nil {
 			log.Printf("[DUMMY %s] crashed: %v", port, err)
 		}
@@ -37,9 +40,9 @@ func main() {
 	}
 
 	// Start dummy backends
-	startDummyBackend("9001")
-	startDummyBackend("9002")
-	startDummyBackend("9003")
+	startDummyBackend("9001", 0)
+	startDummyBackend("9002", 300*time.Millisecond)
+	startDummyBackend("9003", 300*time.Millisecond)
 
 	// Backend pool (THREAD SAFE)
 	// --------------------------------------------------
@@ -48,30 +51,30 @@ func main() {
 	pool.AddServer(&core.Backend{Address: "localhost:9002", Alive: true})
 	pool.AddServer(&core.Backend{Address: "localhost:9003", Alive: true})
 
-	router:= routing.NewAdaptiveRouter(pool)
+	router := routing.NewAdaptiveRouter(pool)
 
 	mux := http.NewServeMux()
 
 	//metrics and admin
-	mux.Handle("/metrics",api.MetricsHandler(pool.GetServers()))
+	mux.Handle("/metrics", api.MetricsHandler(pool.GetServers()))
 	mux.Handle("/admin/add", api.AddServerHandler(pool))
 
 	//status endpoint
-	mux.Handle("/status",api.StatusHandler(router,pool.GetServers))
+	mux.Handle("/status", api.StatusHandler(router, pool.GetServers))
 
 	//health chcker
 	checker := &health.Checker{
-		Pool: pool,
-		Interval: 5*time.Second,
-		Timeout: 2 *time.Second,
+		Pool:     pool,
+		Interval: 5 * time.Second,
+		Timeout:  2 * time.Second,
 	}
 	checker.Start()
 
 	//L4 mode
-	if mode =="L4"{
+	if mode == "L4" {
 		log.Println("[MAIN] Starting L4 TCP Load Balancer on :8080")
-		tcpProxy := &l4.TCPProxy{ 
-			Pool:pool.GetServers(),
+		tcpProxy := &l4.TCPProxy{
+			Pool:   pool.GetServers(),
 			Router: router,
 		}
 		log.Fatal(tcpProxy.Start("8080"))
@@ -80,16 +83,16 @@ func main() {
 	//L7
 	log.Println("[MAIN] Starting L7 HTTP Load Balancer on :8080")
 	httpProxy := &l7.HTTPProxy{
-		Pool: pool.GetServers(),
+		Pool:   pool.GetServers(),
 		Router: router,
 	}
 	mux.Handle("/", httpProxy)
 
 	corsHandler := handlers.CORS(
 		handlers.AllowedOrigins([]string{"*"}),
-		handlers.AllowedMethods([]string{"GET","POST","OPTIONS"}),
-		handlers.AllowedHeaders([]string{"Content-Type"}),	
+		handlers.AllowedMethods([]string{"GET", "POST", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Content-Type"}),
 	)(mux)
-log.Fatal(http.ListenAndServe(":8080",corsHandler))
+	log.Fatal(http.ListenAndServe(":8080", corsHandler))
 
 }

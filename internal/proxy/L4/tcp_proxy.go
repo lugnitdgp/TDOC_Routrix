@@ -53,6 +53,7 @@ func (p *TCPProxy) handleConnection(clientConn net.Conn) {
 		backend.ErrorCount++
 		backend.Mutex.Unlock()
 		clientConn.Close()
+		return
 	}
 
 	go io.Copy(serverConn, clientConn)
@@ -60,11 +61,17 @@ func (p *TCPProxy) handleConnection(clientConn net.Conn) {
 
 	clientConn.Close()
 	serverConn.Close()
+	duration := time.Since(start)
+	latency := duration.Milliseconds()
 
 	backend.Mutex.Lock()
 	backend.ActiveConns--
-	lat := time.Since(start)
-	backend.Latency = (backend.Latency + lat) / 2
+	backend.Latency = duration
+	if backend.Emalatency == 0 {
+		backend.Emalatency = latency
+	} else {
+		backend.Emalatency = int64(0.5*float64(latency) + 0.5*float64(backend.Emalatency))
+	}
 
 	backend.Mutex.Unlock()
 
