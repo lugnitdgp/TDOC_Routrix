@@ -44,9 +44,10 @@ func main() {
 	// Backend pool (THREAD SAFE)
 	// --------------------------------------------------
 	pool := core.NewServerPool()
-	pool.AddServer(&core.Backend{Address: "localhost:9001", Alive: true})
-	pool.AddServer(&core.Backend{Address: "localhost:9002", Alive: true})
-	pool.AddServer(&core.Backend{Address: "localhost:9003", Alive: true})
+	// change the server weights from here [range(prefer upto one decimal place): 0 to 1]
+	pool.AddServer(&core.Backend{Address: "localhost:9001", Alive: true, Weight: 3})
+	pool.AddServer(&core.Backend{Address: "localhost:9002", Alive: true, Weight: 2})
+	pool.AddServer(&core.Backend{Address: "localhost:9003", Alive: true, Weight: 1})
 
 	router:= routing.NewAdaptiveRouter(pool)
 

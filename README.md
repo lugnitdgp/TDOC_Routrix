@@ -9,7 +9,7 @@
 * **Go (Golang)** – core backend & networking
 * **net/http & TCP sockets** – L7/L4 proxies
 * **HTML, CSS, JavaScript (Canvas API)** – live dashboard
-* **Traditional Algorithms** – Round Robin, Least Connections, Random
+* **Traditional Algorithms** – Round Robin, Least Connections, Random, Weighted Round Robin
 
 ---
 
