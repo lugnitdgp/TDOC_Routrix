@@ -51,7 +51,7 @@ func main() {
 })
 
 pool.AddServer(&core.Backend{
-	Address:      "localhost:9002",
+	Address: "localhost:9002",
 	Alive:        true,
 	CircuitState: "CLOSED",
 })
