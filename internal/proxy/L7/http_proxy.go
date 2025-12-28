@@ -35,8 +35,16 @@ func (p *HTTPProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	proxy.ServeHTTP(w, r)
 
+	duration := time.Since(start)
+	latency := time.Since(start).Milliseconds()
 	backend.Mutex.Lock()
-	backend.ActiveConns++
-	backend.Latency = time.Since(start)
+	backend.ActiveConns--
+	backend.Latency = duration
+
+	if backend.Emalatency == 0 {
+		backend.Emalatency = latency
+	} else {
+		backend.Emalatency = int64(0.5*float64(latency) + 0.5*float64(backend.Emalatency))
+	}
 	backend.Mutex.Unlock()
 }
