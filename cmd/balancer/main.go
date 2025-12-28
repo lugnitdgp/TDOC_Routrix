@@ -79,6 +79,17 @@ pool.AddServer(&core.Backend{
 		Pool:     pool,
 		Interval: 5 * time.Second,
 		Timeout:  2 * time.Second,
+	mux.Handle("/metrics",api.MetricsHandler(pool.GetServers()))
+	mux.Handle("/admin/add", api.AddServerHandler(pool))
+
+	//status endpoint
+	mux.Handle("/status",api.StatusHandler(router,pool.GetServers))
+
+	//health chcker
+	checker := &health.Checker{
+		Pool: pool,
+		Interval: 5*time.Second,
+		Timeout: 2 *time.Second,
 	}
 	checker.Start()
 
@@ -87,6 +98,10 @@ pool.AddServer(&core.Backend{
 		log.Println("[MAIN] Starting L4 TCP Load Balancer on :8080")
 		tcpProxy := &l4.TCPProxy{
 			Pool:   pool.GetServers(),
+	if mode =="L4"{
+		log.Println("[MAIN] Starting L4 TCP Load Balancer on :8080")
+		tcpProxy := &l4.TCPProxy{ 
+			Pool:pool.GetServers(),
 			Router: router,
 		}
 		log.Fatal(tcpProxy.Start("8080"))
@@ -96,6 +111,7 @@ pool.AddServer(&core.Backend{
 	log.Println("[MAIN] Starting L7 HTTP Load Balancer on :8080")
 	httpProxy := &l7.HTTPProxy{
 		Pool:   pool.GetServers(),
+		Pool: pool.GetServers(),
 		Router: router,
 	}
 	mux.Handle("/", httpProxy)
@@ -106,5 +122,11 @@ pool.AddServer(&core.Backend{
 		handlers.AllowedHeaders([]string{"Content-Type"}),
 	)(mux)
 	log.Fatal(http.ListenAndServe(":8080", corsHandler))
+
+}
+		handlers.AllowedMethods([]string{"GET","POST","OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Content-Type"}),	
+	)(mux)
+log.Fatal(http.ListenAndServe(":8080",corsHandler))
 
 }

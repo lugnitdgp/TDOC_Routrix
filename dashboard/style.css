@@ -1,0 +1,118 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #0f172a, #020617);
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #e5e7eb;
+  padding: 2.5rem;
+}
+
+/* ---------------- CONTAINER ---------------- */
+.container {
+  max-width: 1050px;
+  margin: 0 auto;
+  padding: 2rem 2.25rem 2.5rem;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(14px);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6);
+}
+
+/* ---------------- HEADER ---------------- */
+.header h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.header p {
+  margin-top: 0.4rem;
+  font-size: 0.95rem;
+  color: #c7d2fe;
+}
+
+/* ---------------- CONTROLS ---------------- */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.75rem 0 1.25rem;
+}
+
+.controls label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #cbd5f5;
+}
+
+.select-box {
+  background: linear-gradient(135deg, #f8fafc, #e5e7eb);
+  color: #020617;
+  padding: 0.55rem 0.9rem;
+  border-radius: 10px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.select-box:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------------- CANVAS ---------------- */
+.canvas-wrapper {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(2, 6, 23, 0.75);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+canvas {
+  width: 100%;
+  border-radius: 10px;
+}
+
+/* ---------------- LEGEND ---------------- */
+.legend {
+  display: flex;
+  gap: 1.75rem;
+  margin-top: 1.25rem;
+  font-size: 0.85rem;
+  color: #cbd5f5;
+}
+
+.legend span {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend .alive {
+  background: #22c55e;
+}
+
+.legend .down {
+  background: #ef4444;
+}
+
+.legend .request {
+  background: #facc15;
+}

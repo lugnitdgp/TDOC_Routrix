@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title> Load Balancer Simulation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1 class="header">Live Adaptive Load Balancer Simulation</h1>
+
+    <div class="controls">
+      <label for="algo" class="label">Routing Algorithm:</label>
+      <select id="algo" class="select-box">
+        <option value="roundrobin">Round-Robin</option>
+        <option value="leastconnections">Least Connections</option>
+        <option value="random">Random</option>
+        <option value="none">No Load Balancer</option>
+      </select>
+    </div>
+
+    <canvas id="simulation" width="800" height="400" class="simulation-canvas"></canvas>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

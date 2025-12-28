@@ -1,0 +1,65 @@
+body {
+  background: #0f172a;
+  color: #e5e7eb;
+  font-family: Inter, system-ui;
+}
+
+.container {
+  max-width: 900px;
+  margin: 40px auto;
+}
+
+.card {
+  background: #020617;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.decision b {
+  color: #38bdf8;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 10px;
+  text-align: left;
+}
+
+tr.alive td {
+  color: #22c55e;
+}
+
+tr.down td {
+  color: #ef4444;
+}
+
+.log {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.log-entry {
+  font-family: monospace;
+  padding: 6px 0;
+  border-bottom: 1px solid #1e293b;
+}
+
+.log-entry.random { color: #facc15; }
+.log-entry.rr { color: #38bdf8; }
+.log-entry.lc { color: #a78bfa; }
+
+.card.log {
+  max-height: 280px;   /* adjust if you want 5–6 logs */
+  overflow: hidden;
+}
+
+#log-box {
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 6px;
+}

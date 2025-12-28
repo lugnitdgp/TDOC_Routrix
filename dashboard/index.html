@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Live Load Balancer Dashboard</title>
+  <link rel="stylesheet" href="style1.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+
+    <h1>Adaptive Load Balancer Dashboard</h1>
+
+    <div class="card decision">
+      <h2>Current Decision</h2>
+      <p><span>Algorithm</span>: <b id="algo"></b></p>
+      <p><span>Reason</span>: <b id="reason"></b></p>
+      <p><span>Selected Backend</span>: <b id="selected"></b></p>
+    </div>
+
+    <div class="card">
+      <h2>Backend Health</h2>
+      <table id="backend-table">
+        <thead>
+          <tr>
+            <th>Address</th>
+            <th>Alive</th>
+            <th>Conns</th>
+            <th>Latency</th>
+            <th>Errors</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card log">
+      <h2>Decision Log</h2>
+      <div id="log-box"></div>
+    </div>
+
+  </div>
+
+  <script src="script1.js"></script>
+</body>
+</html>
