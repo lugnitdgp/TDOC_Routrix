@@ -3,6 +3,8 @@ package routing
 import (
 	"fmt"
 	"log"
+	"math/rand"
+	"os"
 	"sync"
 	"time"
 
@@ -82,13 +84,25 @@ func (ar *AdaptiveRouter) Pick() *core.Backend {
 	avgLatencyMs := avgLatency / int64(time.Millisecond)
 	errorRate := float64(totalErrors) / float64(totalConns+1)
 
+	explicitAlgo := os.Getenv("ALGORITHM")
+
 	log.Printf("Adaptive algo=%s reason=%s picked=%s avgavgConns=%d maxConns=%d avgLatencyMs=%d errorRate=%.2f",
 		ar.currentAlgo, ar.reason, ar.lastPicked, avgConns, maxConns, avgLatencyMs, errorRate)
 
 	var selected *core.Backend
 
 	//decision log
-	if errorRate > 0.3 {
+	if explicitAlgo == "lrt" {
+		if rand.Float64() < 0.05 {
+			ar.currentAlgo = "random"
+			ar.reason = "stale_prevention"
+			selected = ar.rn.GetNextAvaliableServer(backends)
+		} else {
+			ar.currentAlgo = "leastresponsetime"
+			ar.reason = "explicit_choice"
+			selected = ar.lrt.GetNextAvaliableServer(backends)
+		}
+	} else if errorRate > 0.3 {
 		ar.currentAlgo = "random"
 		ar.reason = fmt.Sprintf("high_error_rate(%.2f)", errorRate)
 		selected = ar.rn.GetNextAvaliableServer(backends)
@@ -97,9 +111,15 @@ func (ar *AdaptiveRouter) Pick() *core.Backend {
 		ar.reason = "high_concurrency"
 		selected = ar.lc.GetNextAvaliableServer(backends)
 	} else if avgLatencyMs > 50 {
-		ar.currentAlgo = "leastresponsetime"
-		ar.reason = fmt.Sprintf("high_latency(%dms)", avgLatencyMs)
-		selected = ar.lrt.GetNextAvaliableServer(backends)
+		if rand.Float64() < 0.05 {
+			ar.currentAlgo = "random"
+			ar.reason = "stale_prevention"
+			selected = ar.rn.GetNextAvaliableServer(backends)
+		} else {
+			ar.currentAlgo = "leastresponsetime"
+			ar.reason = fmt.Sprintf("high_latency(%dms)", avgLatencyMs)
+			selected = ar.lrt.GetNextAvaliableServer(backends)
+		}
 	} else {
 		ar.currentAlgo = "roundrobin"
 		ar.reason = "normal_conditions"
