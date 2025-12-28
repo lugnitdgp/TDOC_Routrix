@@ -44,15 +44,41 @@ func main() {
 	// Backend pool (THREAD SAFE)
 	// --------------------------------------------------
 	pool := core.NewServerPool()
-	pool.AddServer(&core.Backend{Address: "localhost:9001", Alive: true})
-	pool.AddServer(&core.Backend{Address: "localhost:9002", Alive: true})
-	pool.AddServer(&core.Backend{Address: "localhost:9003", Alive: true})
+	pool.AddServer(&core.Backend{
+	Address:      "localhost:9001",
+	Alive:        true,
+	CircuitState: "CLOSED",
+})
 
-	router:= routing.NewAdaptiveRouter(pool)
+pool.AddServer(&core.Backend{
+	Address: "localhost:9002",
+	Alive:        true,
+	CircuitState: "CLOSED",
+})
+
+pool.AddServer(&core.Backend{
+	Address:      "localhost:9003",
+	Alive:        true,
+	CircuitState: "CLOSED",
+})
+
+
+	router := routing.NewAdaptiveRouter(pool)
 
 	mux := http.NewServeMux()
 
 	//metrics and admin
+	mux.Handle("/metrics", api.MetricsHandler(pool.GetServers()))
+	mux.Handle("/admin/add", api.AddServerHandler(pool))
+
+	//status endpoint
+	mux.Handle("/status", api.StatusHandler(router, pool.GetServers))
+
+	//health chcker
+	checker := &health.Checker{
+		Pool:     pool,
+		Interval: 5 * time.Second,
+		Timeout:  2 * time.Second,
 	mux.Handle("/metrics",api.MetricsHandler(pool.GetServers()))
 	mux.Handle("/admin/add", api.AddServerHandler(pool))
 
@@ -68,6 +94,10 @@ func main() {
 	checker.Start()
 
 	//L4 mode
+	if mode == "L4" {
+		log.Println("[MAIN] Starting L4 TCP Load Balancer on :8080")
+		tcpProxy := &l4.TCPProxy{
+			Pool:   pool.GetServers(),
 	if mode =="L4"{
 		log.Println("[MAIN] Starting L4 TCP Load Balancer on :8080")
 		tcpProxy := &l4.TCPProxy{ 
@@ -80,6 +110,7 @@ func main() {
 	//L7
 	log.Println("[MAIN] Starting L7 HTTP Load Balancer on :8080")
 	httpProxy := &l7.HTTPProxy{
+		Pool:   pool.GetServers(),
 		Pool: pool.GetServers(),
 		Router: router,
 	}
@@ -87,6 +118,12 @@ func main() {
 
 	corsHandler := handlers.CORS(
 		handlers.AllowedOrigins([]string{"*"}),
+		handlers.AllowedMethods([]string{"GET", "POST", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Content-Type"}),
+	)(mux)
+	log.Fatal(http.ListenAndServe(":8080", corsHandler))
+
+}
 		handlers.AllowedMethods([]string{"GET","POST","OPTIONS"}),
 		handlers.AllowedHeaders([]string{"Content-Type"}),	
 	)(mux)
