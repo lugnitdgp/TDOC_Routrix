@@ -8,6 +8,11 @@ import (
 
 	"github.com/lugnitdgp/TDOC_Routrix/internal/core"
 )
+const (
+	MaxFailures  = 3
+	CooldownTime = 10 * time.Second
+)
+
 
 type AdaptiveRouter struct{
 	pool *core.ServerPool
@@ -52,21 +57,47 @@ func (ar *AdaptiveRouter) Pick() *core.Backend{
 	var maxConns int64
 	aliveCount :=0
 
-	for _, b := range backends{
-		b.Mutex.Lock()
-		if b.Alive{
-			aliveCount++
-			totalConns+=b.ActiveConns
-			totalLatency += int64(b.Latency)
-			totalErrors += b.ErrorCount
+	now := time.Now()
 
-			if b.ActiveConns > maxConns{
-				maxConns=b.ActiveConns
-			}
+for _, b := range backends {
+	b.Mutex.Lock()
+
+	// -------- CIRCUIT BREAKER LOGIC --------
+
+	// If OPEN, check cooldown
+	if b.CircuitState == "OPEN" {
+		if now.Sub(b.LastFailure) > CooldownTime {
+			b.CircuitState = "HALF_OPEN"
+			log.Printf("[circuit] %s → HALF_OPEN", b.Address)
+		} else {
+			b.Mutex.Unlock()
+			continue
 		}
-		b.Mutex.Unlock()
-
 	}
+
+	// If too many failures, OPEN circuit
+	if b.FailureCount >= MaxFailures {
+		b.CircuitState = "OPEN"
+		log.Printf("[circuit] %s → OPEN", b.Address)
+		b.Mutex.Unlock()
+		continue
+	}
+
+	// -------- NORMAL METRICS COLLECTION --------
+	if b.Alive {
+		aliveCount++
+		totalConns += b.ActiveConns
+		totalLatency += int64(b.Latency)
+		totalErrors += b.ErrorCount
+
+		if b.ActiveConns > maxConns {
+			maxConns = b.ActiveConns
+		}
+	}
+
+	b.Mutex.Unlock()
+}
+
 
 	if aliveCount == 0{
 		log.Println("[adaptive] no alive backends")

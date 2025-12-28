@@ -47,6 +47,7 @@ func (p *HTTPProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Successful proxying
 	backend.Mutex.Lock()
 	backend.FailureCount = 0
+	backend.CircuitState = "CLOSED"
 	backend.LastSuccess = time.Now()
 	backend.ActiveConns--
 	backend.Latency = time.Since(start)
