@@ -83,17 +83,17 @@ for _, b := range backends {
 		continue
 	}
 
-	// -------- NORMAL METRICS COLLECTION --------
-	if b.Alive {
-		aliveCount++
-		totalConns += b.ActiveConns
-		totalLatency += int64(b.Latency)
-		totalErrors += b.ErrorCount
+if b.Alive {
+    aliveCount++
+    totalConns += b.ActiveConns
+    totalLatency += int64(b.Latency)
+    totalErrors += b.ErrorCount
 
-		if b.ActiveConns > maxConns {
-			maxConns = b.ActiveConns
-		}
-	}
+    if b.ActiveConns > maxConns {
+        maxConns = b.ActiveConns
+    }
+}
+
 
 	b.Mutex.Unlock()
 }
