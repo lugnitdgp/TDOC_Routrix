@@ -31,12 +31,15 @@ func (p *HTTPProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	target, _ := url.Parse("http://" + backend.Address)
 	proxy := httputil.NewSingleHostReverseProxy(target)
 
+	var proxyFailed bool
+
 	// Track proxy errors
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 		backend.Mutex.Lock()
 		backend.FailureCount++
 		backend.LastFailure = time.Now()
 		backend.ActiveConns--
+		proxyFailed = true
 		backend.Mutex.Unlock()
 
 		http.Error(w, "Backend error", http.StatusBadGateway)
@@ -44,10 +47,16 @@ func (p *HTTPProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	proxy.ServeHTTP(w, r)
 
-	// Successful proxying
+	// Only mark success if proxy did NOT fail
+	if proxyFailed {
+		return
+	}
+
 	backend.Mutex.Lock()
-	backend.FailureCount = 0
-	backend.CircuitState = "CLOSED"
+	if backend.CircuitState != "OPEN" {
+		backend.FailureCount = 0
+		backend.CircuitState = "CLOSED"
+	}
 	backend.LastSuccess = time.Now()
 	backend.ActiveConns--
 	backend.Latency = time.Since(start)
