@@ -14,6 +14,7 @@ type AdaptiveRouter struct{
 	rr *RoundRobinRouter
 	lc *LeastConnectionsRouter
 	rn *RandomRouter
+	wrr *WeightedRoundRobinRouter
 	currentAlgo string
 	reason string
 	lastPicked string
@@ -36,6 +37,7 @@ func NewAdaptiveRouter(pool *core.ServerPool) *AdaptiveRouter{
 		rr: NewRoundRobinRouter(),
 		lc: NewLeastConnectionsRouter(),
 		rn: NewRandomRouter(),
+		wrr: NewWeightedRoundRobinRouter(),
 		currentAlgo: "roundrobin",
 		reason: "normal_conditions",
 	}
@@ -50,7 +52,9 @@ func (ar *AdaptiveRouter) Pick() *core.Backend{
 	var totalLatency int64
 	var totalErrors int64
 	var maxConns int64
+	totalWeight := 0
 	aliveCount :=0
+	backendCount := len(backends)
 
 	for _, b := range backends{
 		b.Mutex.Lock()
@@ -64,8 +68,8 @@ func (ar *AdaptiveRouter) Pick() *core.Backend{
 				maxConns=b.ActiveConns
 			}
 		}
+		totalWeight += b.Weight
 		b.Mutex.Unlock()
-
 	}
 
 	if aliveCount == 0{
@@ -86,19 +90,25 @@ log.Printf("Adaptive algo=%s reason=%s picked=%s avgavgConns=%d maxConns=%d avgL
  var selected *core.Backend
 
  //decision log
-  if errorRate>0.3{
-	ar.currentAlgo="random"
-	ar.reason=fmt.Sprintf("high_error_rate(%.2f)",errorRate)
-	selected=ar.rn.GetNextAvaliableServer(backends)
-  }else if maxConns>3{
-	ar.currentAlgo="leastconnections"
-	ar.reason="high_concurrency"
-	selected=ar.lc.GetNextAvaliableServer(backends)
-  }else{
-	ar.currentAlgo="roundrobin"
-	ar.reason="normal_conditions"
-	selected=ar.rr.GetNextAvaliableServer(backends)
-  }
+
+	if totalWeight > backendCount {
+		ar.currentAlgo="weightedroundrobin"
+		ar.reason="different_server_weights"
+		selected=ar.wrr.GetNextAvaliableServer(backends)
+	}else if errorRate>0.3{
+		ar.currentAlgo="random"
+		ar.reason=fmt.Sprintf("high_error_rate(%.2f)",errorRate)
+		selected=ar.rn.GetNextAvaliableServer(backends)
+	}else if maxConns>3{
+		ar.currentAlgo="leastconnections"
+		ar.reason="high_concurrency"
+		selected=ar.lc.GetNextAvaliableServer(backends)
+	}else{
+		ar.currentAlgo="roundrobin"
+		ar.reason="normal_conditions"
+		selected=ar.rr.GetNextAvaliableServer(backends)
+	}
+
 if selected != nil{
 	ar.lastPicked=selected.Address
 	DecisionMu.Lock()
